@@ -20,6 +20,13 @@ https://github.com/NetickNetworking/NetickForUnity
 - You can then create an instance by by double clicking in the Assets folder and going
 - Create > Netick > Transport > WTransportProvider
 
+## Features
+| Feature             | Remarks     |
+|---------------------|-------------|
+| WebTransport Server | Supported   |
+| WebTransport Client | WebGL Only  |
+| Reliable Send       | In Research |
+
 
 ## Development Testing
 
