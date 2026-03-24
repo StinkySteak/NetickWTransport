@@ -10,9 +10,6 @@ Unity Editor version 2021 or later.
 Install Netick 2 before installing this package.
 https://github.com/NetickNetworking/NetickForUnity
 
-### Dependencies
-- `com.unity.nuget.newtonsoft-json`
-
 ### Steps
 
 #### Install Transport
@@ -24,6 +21,22 @@ https://github.com/NetickNetworking/NetickForUnity
 - Create > Netick > Transport > WTransportProvider
 
 
-## Development Build
+## Development Testing
 
-WebTransport require a secure connection in order to establish. However, there are couple of ways to do insecure connection. The easiest way is generate a self-signed certificate when running a webtransport server, and then feed the self-signed certificate hash into the Browser WebTransport (javascript) config
+WebTransport requires a secure connection (TLS) to function. For development purposes, the easiest workaround is to generate a self-signed certificate when starting the server. The certificate's SHA-256 hash can then be passed into the browser's WebTransport constructor to bypass the usual certificate validation.
+Here's the example code
+```cs
+Debug.Log($"[{nameof(WTransportNetManager)}]: Starting server on: {port}... cert: {cert}");
+```
+
+Then pass the cert hash to the JavaScript
+```js
+const transport = new WebTransport("https://localhost:7777", {
+  serverCertificateHashes: [
+    {
+      algorithm: "sha-256",
+      value: certificateHash
+    }
+  ]
+});
+```
