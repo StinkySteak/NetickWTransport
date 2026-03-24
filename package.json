@@ -1,0 +1,15 @@
+{
+  "name": "com.stinkysteak.netickwtransport",
+  "version": "0.1.0",
+  "displayName": "NetickWTransport",
+  "description": "Netick transport that utilizes WTransport to host a WebTransport connection",
+  "unity": "2021.3",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "licensesUrl": "",
+  "author": {
+    "name": "Stinkysteak",
+    "email": "stinkysteak@steaksoft.com",
+    "url": "https://steaksoft.net"
+  }
+}
