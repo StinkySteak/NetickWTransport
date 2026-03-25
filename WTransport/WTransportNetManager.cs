@@ -9,7 +9,7 @@ namespace WTransportFfi
     public class WTransportNetManager
     {
         public static WTransportNetManager Instance;
-        public static string OverrideCert;
+        private WTransportConfig _wtransportConfig;
         private List<WTransportPeer> _connectedPeers = new();
         private Dictionary<uint, WTransportPeer> _peerByIds = new();
         private IWTransportEventListener _eventListener;
@@ -18,10 +18,11 @@ namespace WTransportFfi
         private byte[] _receiveBuffer;
         private bool _onBrowserConnectedQueued;
 
-        public WTransportNetManager(IWTransportEventListener listener)
+        public WTransportNetManager(IWTransportEventListener listener, WTransportConfig wtransportConfig)
         {
             _eventListener = listener;
             _receiveBuffer = new byte[2048];
+            _wtransportConfig = wtransportConfig;
         }
 
         public void Start(ushort port)
@@ -31,8 +32,18 @@ namespace WTransportFfi
                 return;
             }
 
-            string cert = WTransportNative.wtransport_start_server_random_cert(port);
-            Debug.Log($"[{nameof(WTransportNetManager)}]: Starting server on: {port}... cert: {cert}");
+
+            if (!_wtransportConfig.EnableSsl)
+            {
+                string cert = WTransportNative.wtransport_start_server_dev(port);
+
+                Debug.Log($"[{nameof(WTransportNetManager)}]: Starting server on: {port}... cert: {cert}");
+            }
+            else
+            {
+                WTransportNative.wtransport_start_server(port, _wtransportConfig.CertificatePath, _wtransportConfig.KeyPath);
+                Debug.Log($"[{nameof(WTransportNetManager)}]: Starting server on: {port}...");
+            }
         }
 
         public void Start() { }
@@ -51,8 +62,21 @@ namespace WTransportFfi
 
             string url = $"https://{address}:{port}/";
             _connectAttemptUrl = url;
-            Debug.Log($"[{nameof(WTransportNetManager)}]: Connecting to: {url} using cert: {OverrideCert}");
-            WTransportBrowser.WebTransport_Connect(url, OverrideCert);
+
+            Debug.Log($"_wtransportConfig.EnableConnectUsingCertHash: {_wtransportConfig.EnableConnectUsingCertHash}");
+
+            if (_wtransportConfig.EnableConnectUsingCertHash)
+            {
+                string connectServerCert = _wtransportConfig.ConnectServerCertHash;
+
+                Debug.Log($"[{nameof(WTransportNetManager)}]: Connecting to: {url} using cert: {connectServerCert}");
+                WTransportBrowser.WebTransport_Connect(url, connectServerCert);
+            }
+            else
+            {
+                Debug.Log($"[{nameof(WTransportNetManager)}]: Connecting to: {url}");
+                WTransportBrowser.WebTransport_Connect(url);
+            }
         }
 
         [MonoPInvokeCallback(typeof(Action))]

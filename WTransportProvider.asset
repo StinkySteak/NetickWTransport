@@ -12,3 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46decf935119f614fa0a76ddb2d97f45, type: 3}
   m_Name: WTransportProvider
   m_EditorClassIdentifier: 
+  WTransportConfig:
+    EnableConnectUsingCertHash: 0
+    ConnectServerCertHash: 
+    EnableSsl: 0
+    CertificatePath: 
+    KeyPath: 

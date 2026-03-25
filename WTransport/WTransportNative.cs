@@ -8,7 +8,7 @@ namespace WTransportFfi
         private const string DllName = "wtransport_ffi";
 
         [DllImport(DllName)]
-        public static extern IntPtr wtransport_start_server(ushort port);
+        public static extern IntPtr wtransport_start_server(ushort port, [MarshalAs(UnmanagedType.LPStr)] string certPath, [MarshalAs(UnmanagedType.LPStr)] string keyPath);
 
         [DllImport(DllName)]
         public static extern bool wtransport_send_datagram(uint peerId, IntPtr ptr, int length);
@@ -33,7 +33,7 @@ namespace WTransportFfi
 
         [DllImport(DllName)]
         public static extern void wtransport_disconnect_client(uint clientId);
-        
+
         [DllImport(DllName)]
         public static extern void wtransport_free_bytes(IntPtr ptr, int length);
 
@@ -52,9 +52,9 @@ namespace WTransportFfi
             return address;
         }
 
-        public static string wtransport_start_server_random_cert(ushort port)
+        public static string wtransport_start_server_dev(ushort port)
         {
-            IntPtr ptr = wtransport_start_server(port);
+            IntPtr ptr = wtransport_start_server(port, null, null);
 
             string hash = Marshal.PtrToStringAnsi(ptr);
             wtransport_free_string(ptr);

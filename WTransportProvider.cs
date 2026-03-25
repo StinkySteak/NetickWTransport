@@ -9,23 +9,31 @@ namespace Netick.Transport
     [CreateAssetMenu(fileName = nameof(WTransportProvider), menuName = "Netick/Transport/WTransportProvider")]
     public class WTransportProvider : NetworkTransportProvider
     {
+        public WTransportConfig WTransportConfig;
+
         public override NetworkTransport MakeTransportInstance()
         {
-            return new WTransport();
+            return new WTransport(this);
         }
     }
 
     public class WTransport : NetworkTransport, IWTransportEventListener
     {
+        private WTransportProvider _transportProvider;
         private WTransportNetManager _netManager;
         private Dictionary<WTransportPeer, WTransportConnection> _connections;
         private Queue<WTransportConnection> _freeConnections;
         private BitBuffer _buffer;
         private byte[] _receiveBuffer;
 
+        public WTransport(WTransportProvider transportProvider)
+        {
+            _transportProvider = transportProvider;
+        }
+
         public override void Init()
         {
-            _netManager = new WTransportNetManager(this);
+            _netManager = new WTransportNetManager(this, _transportProvider.WTransportConfig);
             _connections = new(Engine.MaxClients);
             _freeConnections = new(Engine.MaxClients);
             _buffer = new BitBuffer(createChunks: false);
