@@ -27,12 +27,23 @@ https://github.com/NetickNetworking/NetickForUnity
 | WebTransport Client | WebGL Only  |
 | Reliable Send       | In Research |
 
+## Production Build (TLS)
+
+In Order to allow TLS for production build in your game, you can fill the certificate path here e.g `fullchain.pem` and `privkey.pem` and toggle `EnableSsl`
+
+```
+public bool EnableSsl;
+public string CertificatePath;
+public string KeyPath;
+```
 
 ## Development Testing
 
 WebTransport requires a secure connection (TLS) to function. For development purposes, the easiest workaround is to generate a self-signed certificate when starting the server. The certificate's SHA-256 hash can then be passed into the browser's WebTransport constructor to bypass the usual certificate validation.
 Here's the example code
 ```cs
+string cert = WTransportNative.wtransport_start_server_dev(port);
+
 Debug.Log($"[{nameof(WTransportNetManager)}]: Starting server on: {port}... cert: {cert}");
 ```
 
@@ -47,3 +58,4 @@ const transport = new WebTransport("https://localhost:7777", {
   ]
 });
 ```
+
