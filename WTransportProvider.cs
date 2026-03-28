@@ -155,7 +155,7 @@ namespace Netick.Transport
             }
             else if (transportDeliveryMethod == TransportDeliveryMethod.Reliable)
             {
-                Debug.LogError($"[{nameof(WTransportProvider)}]: Reliable send is still unsupported");
+                Peer.SendStreamUni(ptr, length);
             }
         }
     }

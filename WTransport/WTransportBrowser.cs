@@ -16,6 +16,9 @@ namespace WTransportFfi
 
         [DllImport("__Internal")]
         internal static extern void WebTransport_Send(IntPtr ptr, int length);
+        
+        [DllImport("__Internal")]
+        internal static extern void WebTransport_SendStream(IntPtr ptr, int length);
 
         [DllImport("__Internal")]
         internal static extern void WebTransport_SetCallbackOnConnected(Action callback);
@@ -25,12 +28,17 @@ namespace WTransportFfi
 
         [DllImport("__Internal")]
         internal static extern void WebTransport_SetCallbackOnMessageReceived(CallbackMessageReceived callback);
+
+        [DllImport("__Internal")]
+        public static extern void WebTransport_SetCallbackOnStreamMessageReceived(CallbackMessageReceived callback);
 #else
         internal static void WebTransport_Connect(string address, string cert = null) { }
         internal static void WebTransport_CloseConnection() { }
         internal static void WebTransport_SetCallbackOnConnected(Action callback) { }
         internal static void WebTransport_SetCallbackOnMessageReceived(CallbackMessageReceived callback) { }
+        internal static void WebTransport_SetCallbackOnStreamMessageReceived(CallbackMessageReceived callback) { }
         internal static void WebTransport_Send(IntPtr ptr, int length) { }
+        internal static void WebTransport_SendStream(IntPtr ptr, int length) { }
         internal static void WebTransport_SetCallbackOnDisconnected(Action callback) { }
 #endif
     }

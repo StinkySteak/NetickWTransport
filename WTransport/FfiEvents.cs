@@ -22,4 +22,12 @@ namespace WTransportFfi
         public IntPtr ptr;
         public int length;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiEventRecvStreamUni
+    {
+        public uint client_id;
+        public IntPtr ptr;
+        public int length;
+    }
 }

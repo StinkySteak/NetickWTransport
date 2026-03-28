@@ -14,6 +14,9 @@ namespace WTransportFfi
         public static extern bool wtransport_send_datagram(uint peerId, IntPtr ptr, int length);
 
         [DllImport(DllName)]
+        public static extern bool wtransport_send_stream_uni(uint peerId, IntPtr ptr, int length);
+
+        [DllImport(DllName)]
         public static extern bool wtransport_free_string(IntPtr ptr);
 
         [DllImport(DllName)]
@@ -27,6 +30,9 @@ namespace WTransportFfi
 
         [DllImport(DllName)]
         public static extern bool wtransport_pop_event_recv_datagram(out FfiEventRecvDatagram evt);
+        
+        [DllImport(DllName)]
+        public static extern bool wtransport_pop_event_recv_stream_uni(out FfiEventRecvStreamUni evt);
 
         [DllImport(DllName)]
         private static extern IntPtr wtransport_get_client_address(uint clientId);

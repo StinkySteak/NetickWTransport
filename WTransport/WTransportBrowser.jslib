@@ -6,6 +6,7 @@ const WTransport = {
         activeTransport: null,
         writer: null,
         onMessageCallback: null,
+        onStreamMessageCallback: null, // [NEW] Callback for reliable streams
         onDisconnectedCallback: null,
         onOpenCallback: null,
 
@@ -24,6 +25,7 @@ const WTransport = {
             }
         },
 
+        // --- Unreliable (Datagram) Reader ---
         ReadLoop: async function(reader) {
             try {
                 while (true) {
@@ -46,15 +48,70 @@ const WTransport = {
             }
         },
 
-        // [FIXED] Renamed arguments and fixed logic
+        // --- [NEW] Reliable (Stream) Listeners ---
+        ListenForServerStreams: async function() {
+            if (!WT.activeTransport) return;
+            const streamReader = WT.activeTransport.incomingUnidirectionalStreams.getReader();
+
+            try {
+                while (true) {
+                    const { value: stream, done } = await streamReader.read();
+                    if (done) break;
+
+                    // Hand off to the background worker. NO 'await' here!
+                    WT.ReadSingleUniStream(stream);
+                }
+            } catch (e) {
+                console.error("[JS] Stream listener stopped:", e);
+            }
+        },
+
+        ReadSingleUniStream: async function(stream) {
+            const reader = stream.getReader();
+            let chunks = [];
+            let totalLength = 0;
+
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break; // Rust called stream.finish()
+
+                    if (value) {
+                        chunks.push(value);
+                        totalLength += value.length;
+                    }
+                }
+
+                if (totalLength > 0 && WT.onStreamMessageCallback) {
+                    // Reassemble chunks into one contiguous array
+                    const completeMessage = new Uint8Array(totalLength);
+                    let offset = 0;
+                    for (const chunk of chunks) {
+                        completeMessage.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+
+                    // Pass to C#
+                    const ptr = Module._malloc(totalLength);
+                    Module.HEAPU8.set(completeMessage, ptr);
+                    try {
+                        dynCall('vii', WT.onStreamMessageCallback, [ptr, totalLength]);
+                    } finally {
+                        Module._free(ptr);
+                    }
+                }
+            } catch (e) {
+                console.error("[JS] Error reading specific uni-stream:", e);
+            }
+        },
+
+        // --- Connection Helper ---
         constructWebTransport: function(addressPtr, certificateHashPtr) {
             const address = UTF8ToString(addressPtr);
 
-            // [FIX 1] Check the pointer, not the undefined variable
             if (certificateHashPtr) {
                 const hashString = UTF8ToString(certificateHashPtr);
                 
-                // If string is empty, treat as normal connection
                 if (!hashString || hashString.length === 0) {
                      return new WebTransport(address);
                 }
@@ -66,7 +123,7 @@ const WTransport = {
                     );
                 } catch (e) {
                     console.error('[JS] Error parsing hash:', e);
-                    return null; // Signals failure
+                    return null; 
                 }
 
                 return new WebTransport(address, { 
@@ -74,7 +131,6 @@ const WTransport = {
                 });
             }
 
-            // No Cert provided
             return new WebTransport(address);
         }
     },
@@ -88,6 +144,12 @@ const WTransport = {
         WT.onMessageCallback = callback;
     },
 
+    // [NEW] C# Setter for Reliable Messages
+    WebTransport_SetCallbackOnStreamMessageReceived__deps: ['$WT'],
+    WebTransport_SetCallbackOnStreamMessageReceived: function(callback) {
+        WT.onStreamMessageCallback = callback;
+    },
+
     WebTransport_SetCallbackOnConnected__deps: ['$WT'],
     WebTransport_SetCallbackOnConnected: function(callback) {
         WT.onOpenCallback = callback;
@@ -98,13 +160,10 @@ const WTransport = {
         WT.onDisconnectedCallback = callback;
     },
 
-    // [FIXED] Now uses WT.constructWebTransport
     WebTransport_Connect__deps: ['$WT'],
     WebTransport_Connect: async function(addressPtr, certificateHashPtr) {
-        // [FIX 2] Call the helper via the internal object 'WT'
         const transport = WT.constructWebTransport(addressPtr, certificateHashPtr);
 
-        // [FIX 3] Check for null (hash parsing failure)
         if (!transport) {
             WT.CleanupConnection("Invalid Certificate Hash");
             return;
@@ -117,13 +176,17 @@ const WTransport = {
         try {
             await transport.ready;
             WT.activeTransport = transport;
+            
+            // Unreliable writer is persistent
             WT.writer = WT.activeTransport.datagrams.writable.getWriter();
             
             console.log(`[JS] Connected. Congestion: ${WT.activeTransport.congestionControl}`);
 
             if (WT.onOpenCallback) dynCall('v', WT.onOpenCallback);
 
-            await WT.ReadLoop(WT.activeTransport.datagrams.readable.getReader());
+            // [UPDATED] Start both listening loops concurrently
+            WT.ReadLoop(WT.activeTransport.datagrams.readable.getReader());
+            WT.ListenForServerStreams();
 
         } catch (e) {
             console.error("[JS] Connection Failed:", e);
@@ -131,6 +194,7 @@ const WTransport = {
         }
     },
 
+    // Send Unreliable
     WebTransport_Send__deps: ['$WT'],
     WebTransport_Send: async function(pointer, length) {
         if (!WT.writer) return;
@@ -139,6 +203,26 @@ const WTransport = {
             await WT.writer.write(data);
         } catch (e) {
             console.error("[JS] Send Failed:", e);
+        }
+    },
+
+    // [NEW] Send Reliable
+    WebTransport_SendStream__deps: ['$WT'],
+    WebTransport_SendStream: async function(pointer, length) {
+        if (!WT.activeTransport) return;
+        try {
+            // 1. Open a temporary uni-stream
+            const stream = await WT.activeTransport.createUnidirectionalStream();
+            const writer = stream.getWriter();
+            
+            // 2. Safely grab the data
+            const data = Module.HEAPU8.slice(pointer, pointer + length);
+            
+            // 3. Send and explicitly close (this sends EOF to Rust)
+            await writer.write(data);
+            await writer.close(); 
+        } catch (e) {
+            console.error("[JS] Reliable Send Failed:", e);
         }
     },
 

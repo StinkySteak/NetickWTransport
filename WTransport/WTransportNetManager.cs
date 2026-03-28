@@ -59,6 +59,7 @@ namespace WTransportFfi
             WTransportBrowser.WebTransport_SetCallbackOnConnected(OnBrowserConnectedCallback);
             WTransportBrowser.WebTransport_SetCallbackOnDisconnected(OnBrowserDisconnectedCallback);
             WTransportBrowser.WebTransport_SetCallbackOnMessageReceived(OnBrowserMessageReceivedCallback);
+            WTransportBrowser.WebTransport_SetCallbackOnStreamMessageReceived(OnBrowserMessageReceivedStreamCallback);
 
             string url = $"https://{address}:{port}/";
             _connectAttemptUrl = url;
@@ -108,7 +109,11 @@ namespace WTransportFfi
         {
             Instance.OnBrowserMessageReceived(ptr, length);
         }
-
+        [MonoPInvokeCallback(typeof(CallbackMessageReceived))]
+        private static void OnBrowserMessageReceivedStreamCallback(IntPtr ptr, int length)
+        {
+            Instance.OnBrowserMessageReceived(ptr, length);
+        }
         private void OnBrowserMessageReceived(IntPtr ptr, int length)
         {
             Marshal.Copy(ptr, _receiveBuffer, 0, length);
@@ -156,6 +161,19 @@ namespace WTransportFfi
             }
 
             while (WTransportNative.wtransport_pop_event_recv_datagram(out FfiEventRecvDatagram evtDatagram))
+            {
+                if (_peerByIds.TryGetValue(evtDatagram.client_id, out WTransportPeer peer))
+                {
+                    Marshal.Copy(evtDatagram.ptr, _receiveBuffer, 0, evtDatagram.length);
+                    ArraySegment<byte> bytes = new ArraySegment<byte>(_receiveBuffer, 0, evtDatagram.length);
+
+                    WTransportNative.wtransport_free_bytes(evtDatagram.ptr, evtDatagram.length);
+
+                    _eventListener.OnNetworkReceive(peer, bytes);
+                }
+            }
+
+            while (WTransportNative.wtransport_pop_event_recv_stream_uni(out FfiEventRecvStreamUni evtDatagram))
             {
                 if (_peerByIds.TryGetValue(evtDatagram.client_id, out WTransportPeer peer))
                 {
