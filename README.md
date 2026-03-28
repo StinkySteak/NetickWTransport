@@ -25,7 +25,7 @@ https://github.com/NetickNetworking/NetickForUnity
 |---------------------|-------------|
 | WebTransport Server | Supported   |
 | WebTransport Client | WebGL Only  |
-| Reliable Send       | In Research |
+| Connection Payload  | Unsupported |
 
 ## Production Build (TLS)
 
