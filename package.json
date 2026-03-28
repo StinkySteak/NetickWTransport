@@ -1,6 +1,6 @@
 {
   "name": "com.stinkysteak.netickwtransport",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "displayName": "NetickWTransport",
   "description": "Netick transport that utilizes WTransport to host a WebTransport connection",
   "unity": "2021.3",
