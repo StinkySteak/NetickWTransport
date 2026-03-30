@@ -59,3 +59,6 @@ const transport = new WebTransport("https://localhost:7777", {
 });
 ```
 
+## License
+This project is licensed for use with [Netick](https://netick.net) only.
+See [LICENSE](./LICENSE) for details.
