@@ -17,7 +17,7 @@ https://github.com/NetickNetworking/NetickForUnity
 - Click the plus icon.
 - Select Add package from git URL
 - Enter https://github.com/StinkySteak/NetickWTransport.git
-- You can then create an instance by by double clicking in the Assets folder and going
+- You can then create an instance by double-clicking in the Assets folder and going
 - Create > Netick > Transport > WTransportProvider
 
 ## Features
@@ -25,11 +25,14 @@ https://github.com/NetickNetworking/NetickForUnity
 |---------------------|-------------|
 | WebTransport Server | Supported   |
 | WebTransport Client | WebGL Only  |
-| Connection Payload  | Unsupported |
+| Connection Payload  | Supported |
+
+## IP EndPoint
+Because WebTransport uses HTTP/3 under the hood, the endpoint must use the https:// scheme, for example, https://mygameserver.com:7777 (prod) or https://45.123.789:7777 (dev). However, this is handled automatically by the transport layer, so you don't need to include the prefix yourself. Simply passing mygameserver.com:7777 works just fine.
 
 ## Production Build (TLS)
 
-In Order to allow TLS for production build in your game, you can fill the certificate path here e.g `fullchain.pem` and `privkey.pem` and toggle `EnableSsl`
+To allow TLS for production build in your game, you can fill the certificate path here e.g `fullchain.pem` and `privkey.pem` and toggle `EnableSsl`
 
 ```
 public bool EnableSsl;
